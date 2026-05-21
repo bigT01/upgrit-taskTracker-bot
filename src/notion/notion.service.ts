@@ -8,6 +8,7 @@ export interface Task {
   status: string;
   labels: string[];
   description: string;
+  dueDate?: string;
 }
 
 @Injectable()
@@ -153,6 +154,12 @@ export class NotionService {
       const descriptionProperty = page.properties['Description']?.rich_text || [];
       const description = descriptionProperty.map((t: any) => t.plain_text).join('');
 
+      // Find the date property dynamically (e.g. 'Due Date' or 'Date')
+      const datePropertyKey = Object.keys(page.properties).find(
+        (key) => page.properties[key]?.type === 'date',
+      );
+      const dueDate = datePropertyKey ? page.properties[datePropertyKey]?.date?.start : undefined;
+
       const parts = issueText.split('-');
       let projectName = page.properties['Project']?.select?.name;
       let taskName = issueText;
@@ -178,6 +185,7 @@ export class NotionService {
         status,
         labels,
         description,
+        dueDate,
       };
     });
 

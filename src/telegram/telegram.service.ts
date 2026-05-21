@@ -104,7 +104,26 @@ export class TelegramService {
     for (const [project, tasks] of Object.entries(filteredTasks)) {
       message += `<b>🚀 Project: ${project}</b>\n`;
       tasks.forEach((task) => {
-        message += `🔹 ${task.taskName}\n`;
+        let dueDateStr = '';
+        if (task.dueDate) {
+          const today = new Date();
+          today.setHours(0, 0, 0, 0);
+          const due = new Date(task.dueDate);
+          due.setHours(0, 0, 0, 0);
+          
+          const diffTime = due.getTime() - today.getTime();
+          const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+          
+          if (diffDays < 0) {
+            dueDateStr = `\n   🔴 <b>OVERDUE by ${Math.abs(diffDays)} day(s)!</b>`;
+          } else if (diffDays === 0) {
+            dueDateStr = `\n   🟠 <b>DUE TODAY!</b>`;
+          } else {
+            dueDateStr = `\n   ⏳ Due in ${diffDays} day(s)`;
+          }
+        }
+
+        message += `🔹 ${task.taskName}${dueDateStr}\n`;
         if (task.labels.length > 0) {
           message += `   <i>Tags:</i> ${task.labels.map(l => `#${l.replace(/\s+/g, '_')}`).join(' ')}\n`;
         }
