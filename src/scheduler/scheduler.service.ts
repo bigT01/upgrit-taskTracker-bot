@@ -32,7 +32,7 @@ export class SchedulerService {
     }
   }
 
-  @Cron('0 19 * * *', { timeZone: 'Asia/Almaty' }) 
+  @Cron('30 22 * * *', { timeZone: 'Asia/Almaty' }) 
   async handleEveningReport() {
     this.logger.log('Executing Evening Report Cron...');
     try {
