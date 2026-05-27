@@ -84,7 +84,7 @@ export class NotionService {
           and: [
             {
               property: 'Status',
-              status: { equals: 'done' } as any,
+              status: { equals: 'Done' } as any,
             },
             {
               timestamp: 'last_edited_time',
@@ -150,62 +150,62 @@ export class NotionService {
   }
 
   private parseSingleTask(page: any): Task {
-      // Find the title property key dynamically (e.g. 'Issue' or 'Issue ')
-      const titlePropertyKey = Object.keys(page.properties).find(
-        (key) => page.properties[key]?.type === 'title',
-      ) || 'Issue';
-      const issueProperty = page.properties[titlePropertyKey]?.title || [];
-      const issueText = issueProperty.map((t: any) => t.plain_text).join('');
+    // Find the title property key dynamically (e.g. 'Issue' or 'Issue ')
+    const titlePropertyKey = Object.keys(page.properties).find(
+      (key) => page.properties[key]?.type === 'title',
+    ) || 'Issue';
+    const issueProperty = page.properties[titlePropertyKey]?.title || [];
+    const issueText = issueProperty.map((t: any) => t.plain_text).join('');
 
-      const statusProperty = page.properties['Status']?.status;
-      const status = statusProperty?.name || 'Unknown';
+    const statusProperty = page.properties['Status']?.status;
+    const status = statusProperty?.name || 'Unknown';
 
-      const labelsProperty = page.properties['Labels']?.multi_select || [];
-      const labels = labelsProperty.map((l: any) => l.name);
+    const labelsProperty = page.properties['Labels']?.multi_select || [];
+    const labels = labelsProperty.map((l: any) => l.name);
 
-      const descriptionProperty = page.properties['Description']?.rich_text || [];
-      const description = descriptionProperty.map((t: any) => t.plain_text).join('');
+    const descriptionProperty = page.properties['Description']?.rich_text || [];
+    const description = descriptionProperty.map((t: any) => t.plain_text).join('');
 
-      // Find the date property dynamically (e.g. 'Due Date' or 'Date')
-      const datePropertyKey = Object.keys(page.properties).find(
-        (key) => page.properties[key]?.type === 'date',
-      );
-      const dueDate = datePropertyKey ? page.properties[datePropertyKey]?.date?.start : undefined;
+    // Find the date property dynamically (e.g. 'Due Date' or 'Date')
+    const datePropertyKey = Object.keys(page.properties).find(
+      (key) => page.properties[key]?.type === 'date',
+    );
+    const dueDate = datePropertyKey ? page.properties[datePropertyKey]?.date?.start : undefined;
 
-      const parts = issueText.split('-');
-      let projectName = page.properties['Project']?.select?.name;
-      let taskName = issueText;
+    const parts = issueText.split('-');
+    let projectName = page.properties['Project']?.select?.name;
+    let taskName = issueText;
 
-      if (!projectName) {
-        if (parts.length > 1) {
-          projectName = parts[0].trim();
-          taskName = parts.slice(1).join('-').trim();
-        } else {
-          projectName = 'Other';
-        }
+    if (!projectName) {
+      if (parts.length > 1) {
+        projectName = parts[0].trim();
+        taskName = parts.slice(1).join('-').trim();
       } else {
-        // If we have a Project property, but the issueText still starts with the project name and a hyphen, clean up taskName
-        const prefix = `${projectName} -`;
-        if (issueText.startsWith(prefix)) {
-          taskName = issueText.substring(prefix.length).trim();
-        }
+        projectName = 'Other';
       }
+    } else {
+      // If we have a Project property, but the issueText still starts with the project name and a hyphen, clean up taskName
+      const prefix = `${projectName} -`;
+      if (issueText.startsWith(prefix)) {
+        taskName = issueText.substring(prefix.length).trim();
+      }
+    }
 
-      return {
-        id: page.id,
-        projectName,
-        taskName,
-        status,
-        labels,
-        description,
-        dueDate,
-      };
+    return {
+      id: page.id,
+      projectName,
+      taskName,
+      status,
+      labels,
+      description,
+      dueDate,
+    };
   }
 
   async updateTaskStatusByTitle(titleFragment: string, newStatus: string): Promise<string> {
     try {
       const dataSourceId = await this.getDataSourceId();
-      
+
       // Fetch incomplete tasks to find a match
       const response = await this.notion.dataSources.query({
         data_source_id: dataSourceId,
@@ -223,8 +223,8 @@ export class NotionService {
         ]?.title.map((t: any) => t.plain_text).join('') || '',
       }));
 
-      const match = tasksWithPages.find(t => 
-        t.rawTitle.toLowerCase().includes(titleFragment.toLowerCase()) || 
+      const match = tasksWithPages.find(t =>
+        t.rawTitle.toLowerCase().includes(titleFragment.toLowerCase()) ||
         t.task.taskName.toLowerCase().includes(titleFragment.toLowerCase())
       );
 
