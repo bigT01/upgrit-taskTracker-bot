@@ -9,6 +9,7 @@ export interface Task {
   labels: string[];
   description: string;
   dueDate?: string;
+  id?: string;
 }
 
 @Injectable()
@@ -137,7 +138,18 @@ export class NotionService {
   }
 
   private parseAndGroupTasks(results: any[]): Record<string, Task[]> {
-    const tasks: Task[] = results.map((page: any) => {
+    const tasks: Task[] = results.map((page: any) => this.parseSingleTask(page));
+
+    return tasks.reduce((acc, task) => {
+      if (!acc[task.projectName]) {
+        acc[task.projectName] = [];
+      }
+      acc[task.projectName].push(task);
+      return acc;
+    }, {} as Record<string, Task[]>);
+  }
+
+  private parseSingleTask(page: any): Task {
       // Find the title property key dynamically (e.g. 'Issue' or 'Issue ')
       const titlePropertyKey = Object.keys(page.properties).find(
         (key) => page.properties[key]?.type === 'title',
@@ -180,6 +192,7 @@ export class NotionService {
       }
 
       return {
+        id: page.id,
         projectName,
         taskName,
         status,
@@ -187,14 +200,51 @@ export class NotionService {
         description,
         dueDate,
       };
-    });
+  }
 
-    return tasks.reduce((acc, task) => {
-      if (!acc[task.projectName]) {
-        acc[task.projectName] = [];
+  async updateTaskStatusByTitle(titleFragment: string, newStatus: string): Promise<string> {
+    try {
+      const dataSourceId = await this.getDataSourceId();
+      
+      // Fetch incomplete tasks to find a match
+      const response = await this.notion.dataSources.query({
+        data_source_id: dataSourceId,
+        filter: {
+          property: 'Status',
+          status: { does_not_equal: 'Done' } as any,
+        },
+      });
+
+      const tasksWithPages = response.results.map((page: any) => ({
+        task: this.parseSingleTask(page),
+        pageId: page.id,
+        rawTitle: page.properties[
+          Object.keys(page.properties).find((key) => page.properties[key]?.type === 'title') || 'Issue'
+        ]?.title.map((t: any) => t.plain_text).join('') || '',
+      }));
+
+      const match = tasksWithPages.find(t => 
+        t.rawTitle.toLowerCase().includes(titleFragment.toLowerCase()) || 
+        t.task.taskName.toLowerCase().includes(titleFragment.toLowerCase())
+      );
+
+      if (!match) {
+        return `❌ Could not find any active task matching "${titleFragment}".`;
       }
-      acc[task.projectName].push(task);
-      return acc;
-    }, {} as Record<string, Task[]>);
+
+      await this.notion.pages.update({
+        page_id: match.pageId,
+        properties: {
+          Status: {
+            status: { name: newStatus }
+          }
+        }
+      });
+
+      return `✅ Successfully updated task <b>${match.task.taskName}</b> to status <b>${newStatus}</b>.`;
+    } catch (error) {
+      this.logger.error('Error updating task status by title', error);
+      return `❌ Failed to update task status. Please check if the status "${newStatus}" is valid in Notion.`;
+    }
   }
 }

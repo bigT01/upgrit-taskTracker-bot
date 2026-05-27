@@ -104,4 +104,89 @@ export class TelegramUpdate {
       await ctx.reply('❌ Failed to generate evening report. Check your server logs.');
     }
   }
+
+  @Command('status')
+  async onStatusUpdate(@Ctx() ctx: Context) {
+    if (!ctx.chat) {
+      await ctx.reply('❌ This command can only be used within a chat.');
+      return;
+    }
+    this.telegramService.registerChat(ctx.chat.id);
+
+    // @ts-ignore
+    const text = ctx.message?.text || '';
+    const match = text.match(/^\/status\s+(.+)\s*\|\s*(.+)$/i);
+
+    if (!match) {
+      await ctx.reply('❌ Invalid format. Please use: <code>/status Task Title | New Status</code>\nExample: <code>/status login button | Done</code>', { parse_mode: 'HTML' });
+      return;
+    }
+
+    const titleFragment = match[1].trim();
+    const newStatus = match[2].trim();
+
+    await ctx.reply(`⏳ Searching for task matching "<b>${titleFragment}</b>"...`, { parse_mode: 'HTML' });
+    try {
+      const resultMessage = await this.notionService.updateTaskStatusByTitle(titleFragment, newStatus);
+      await ctx.reply(resultMessage, { parse_mode: 'HTML' });
+    } catch (error) {
+      await ctx.reply('❌ Failed to update task status. Check your server logs.');
+    }
+  }
+
+  @Command('done')
+  async onDoneUpdate(@Ctx() ctx: Context) {
+    if (!ctx.chat) {
+      await ctx.reply('❌ This command can only be used within a chat.');
+      return;
+    }
+    this.telegramService.registerChat(ctx.chat.id);
+
+    // @ts-ignore
+    const text = ctx.message?.text || '';
+    const match = text.match(/^\/done\s+(.+)$/i);
+
+    if (!match) {
+      await ctx.reply('❌ Invalid format. Please use: <code>/done Task Title</code>\nExample: <code>/done login button</code>', { parse_mode: 'HTML' });
+      return;
+    }
+
+    const titleFragment = match[1].trim();
+
+    await ctx.reply(`⏳ Marking task matching "<b>${titleFragment}</b>" as Done...`, { parse_mode: 'HTML' });
+    try {
+      const resultMessage = await this.notionService.updateTaskStatusByTitle(titleFragment, 'Done');
+      await ctx.reply(resultMessage, { parse_mode: 'HTML' });
+    } catch (error) {
+      await ctx.reply('❌ Failed to update task status. Check your server logs.');
+    }
+  }
+
+  @Command(['help', 'info'])
+  async onHelpCommand(@Ctx() ctx: Context) {
+    if (ctx.chat) this.telegramService.registerChat(ctx.chat.id);
+    
+    const helpMessage = `
+🤖 <b>Available Commands</b>
+
+<b>General</b>
+🔹 /start - Start the bot
+🔹 /ping - Check bot status & get Chat ID
+🔹 /help or /info - Show this list of commands
+
+<b>Notion Integration</b>
+🔹 /notion - Check Notion connection status
+🔹 /pending - List all "Not Started" tasks
+🔹 /morning - Generate morning report (active tasks)
+🔹 /evening - Generate evening report (tasks completed today)
+
+<b>Task Management</b>
+🔹 /status <code>&lt;Task Title&gt; | &lt;New Status&gt;</code>
+    <i>Example: /status login page | In Progress</i>
+🔹 /done <code>&lt;Task Title&gt;</code>
+    <i>Example: /done fix bug</i>
+    `;
+    
+    await ctx.reply(helpMessage.trim(), { parse_mode: 'HTML' });
+  }
 }
