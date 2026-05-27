@@ -84,7 +84,7 @@ export class NotionService {
           and: [
             {
               property: 'Status',
-              status: { equals: 'Done' } as any,
+              status: { equals: 'done' } as any,
             },
             {
               timestamp: 'last_edited_time',
@@ -211,7 +211,7 @@ export class NotionService {
         data_source_id: dataSourceId,
         filter: {
           property: 'Status',
-          status: { does_not_equal: 'Done' } as any,
+          status: { does_not_equal: 'done' } as any,
         },
       });
 

@@ -155,7 +155,7 @@ export class TelegramUpdate {
 
     await ctx.reply(`⏳ Marking task matching "<b>${titleFragment}</b>" as Done...`, { parse_mode: 'HTML' });
     try {
-      const resultMessage = await this.notionService.updateTaskStatusByTitle(titleFragment, 'Done');
+      const resultMessage = await this.notionService.updateTaskStatusByTitle(titleFragment, 'done');
       await ctx.reply(resultMessage, { parse_mode: 'HTML' });
     } catch (error) {
       await ctx.reply('❌ Failed to update task status. Check your server logs.');
