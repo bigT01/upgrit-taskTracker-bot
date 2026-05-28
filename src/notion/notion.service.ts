@@ -78,7 +78,8 @@ export class NotionService {
         const month = parts.find(p => p.type === 'month')?.value;
         const day = parts.find(p => p.type === 'day')?.value;
 
-        const todayStartIso = `${year}-${month}-${day}T00:00:00+05:00`;
+        const todayIsoDate = `${year}-${month}-${day}`;
+        const todayStartIso = `${todayIsoDate}T00:00:00+05:00`;
 
         queryFilter = {
           and: [
@@ -87,9 +88,9 @@ export class NotionService {
               status: { equals: 'Done' } as any,
             },
             {
-              timestamp: 'last_edited_time',
-              last_edited_time: {
-                on_or_after: todayStartIso,
+              property: 'Completed Date',
+              date: {
+                equals: todayIsoDate,
               },
             },
           ],
@@ -124,12 +125,12 @@ export class NotionService {
         const year = parts.find(p => p.type === 'year')?.value;
         const month = parts.find(p => p.type === 'month')?.value;
         const day = parts.find(p => p.type === 'day')?.value;
-        const todayStartIso = `${year}-${month}-${day}T00:00:00+05:00`;
-        const todayStart = new Date(todayStartIso).getTime();
+        const todayIsoDate = `${year}-${month}-${day}`;
 
         results = results.filter((page: any) => {
-          const editedTime = new Date(page.last_edited_time).getTime();
-          return editedTime >= todayStart;
+          const completedDateProp = page.properties['Completed Date']?.date?.start;
+          if (!completedDateProp) return false;
+          return completedDateProp.startsWith(todayIsoDate);
         });
       }
 
@@ -255,13 +256,33 @@ export class NotionService {
         return `❌ Could not find any active task matching "${titleFragment}".`;
       }
 
+      const updateProps: any = {
+        Status: {
+          status: { name: newStatus }
+        }
+      };
+
+      if (newStatus === 'Done') {
+        const now = new Date();
+        const formatter = new Intl.DateTimeFormat('en-US', {
+          timeZone: 'Asia/Almaty',
+          year: 'numeric',
+          month: '2-digit',
+          day: '2-digit',
+        });
+        const parts = formatter.formatToParts(now);
+        const year = parts.find(p => p.type === 'year')?.value;
+        const month = parts.find(p => p.type === 'month')?.value;
+        const day = parts.find(p => p.type === 'day')?.value;
+
+        updateProps['Completed Date'] = {
+          date: { start: `${year}-${month}-${day}` }
+        };
+      }
+
       await this.notion.pages.update({
         page_id: match.pageId,
-        properties: {
-          Status: {
-            status: { name: newStatus }
-          }
-        }
+        properties: updateProps
       });
 
       return `✅ Successfully updated task <b>${match.task.taskName}</b> to status <b>${newStatus}</b>.`;
