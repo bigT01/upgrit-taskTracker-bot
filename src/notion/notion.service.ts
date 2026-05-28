@@ -110,7 +110,30 @@ export class NotionService {
         filter: queryFilter,
       });
 
-      return this.parseAndGroupTasks(response.results);
+      let results = response.results;
+      if (isCompleted) {
+        // Enforce the today filter in-memory to ensure only tasks closed today are included
+        const now = new Date();
+        const formatter = new Intl.DateTimeFormat('en-US', {
+          timeZone: 'Asia/Almaty',
+          year: 'numeric',
+          month: '2-digit',
+          day: '2-digit',
+        });
+        const parts = formatter.formatToParts(now);
+        const year = parts.find(p => p.type === 'year')?.value;
+        const month = parts.find(p => p.type === 'month')?.value;
+        const day = parts.find(p => p.type === 'day')?.value;
+        const todayStartIso = `${year}-${month}-${day}T00:00:00+05:00`;
+        const todayStart = new Date(todayStartIso).getTime();
+
+        results = results.filter((page: any) => {
+          const editedTime = new Date(page.last_edited_time).getTime();
+          return editedTime >= todayStart;
+        });
+      }
+
+      return this.parseAndGroupTasks(results);
     } catch (error) {
       this.logger.error('Error fetching tasks from Notion', error);
       throw error;
@@ -211,7 +234,7 @@ export class NotionService {
         data_source_id: dataSourceId,
         filter: {
           property: 'Status',
-          status: { does_not_equal: 'done' } as any,
+          status: { does_not_equal: 'Done' } as any,
         },
       });
 
