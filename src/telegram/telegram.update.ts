@@ -134,7 +134,7 @@ export class TelegramUpdate {
     }
   }
 
-  @Command('done')
+  @Command('Done')
   async onDoneUpdate(@Ctx() ctx: Context) {
     if (!ctx.chat) {
       await ctx.reply('❌ This command can only be used within a chat.');
@@ -144,10 +144,10 @@ export class TelegramUpdate {
 
     // @ts-ignore
     const text = ctx.message?.text || '';
-    const match = text.match(/^\/done\s+(.+)$/i);
+    const match = text.match(/^\/Done\s+(.+)$/i);
 
     if (!match) {
-      await ctx.reply('❌ Invalid format. Please use: <code>/done Task Title</code>\nExample: <code>/done login button</code>', { parse_mode: 'HTML' });
+      await ctx.reply('❌ Invalid format. Please use: <code>/Done Task Title</code>\nExample: <code>/Done login button</code>', { parse_mode: 'HTML' });
       return;
     }
 
@@ -183,8 +183,8 @@ export class TelegramUpdate {
 <b>Task Management</b>
 🔹 /status <code>&lt;Task Title&gt; | &lt;New Status&gt;</code>
     <i>Example: /status login page | In Progress</i>
-🔹 /done <code>&lt;Task Title&gt;</code>
-    <i>Example: /done fix bug</i>
+🔹 /Done <code>&lt;Task Title&gt;</code>
+    <i>Example: /Done fix bug</i>
     `;
     
     await ctx.reply(helpMessage.trim(), { parse_mode: 'HTML' });
