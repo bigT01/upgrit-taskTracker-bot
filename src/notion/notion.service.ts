@@ -190,9 +190,9 @@ export class NotionService {
     const descriptionProperty = page.properties['Description']?.rich_text || [];
     const description = descriptionProperty.map((t: any) => t.plain_text).join('');
 
-    // Find the date property dynamically (e.g. 'Due Date' or 'Date')
+    // Find the date property dynamically (e.g. 'Due Date' or 'Date'), excluding Completed Date
     const datePropertyKey = Object.keys(page.properties).find(
-      (key) => page.properties[key]?.type === 'date',
+      (key) => page.properties[key]?.type === 'date' && key !== 'Completed Date',
     );
     const dueDate = datePropertyKey ? page.properties[datePropertyKey]?.date?.start : undefined;
 
